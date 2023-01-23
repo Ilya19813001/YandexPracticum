@@ -1,6 +1,7 @@
 SQL-проект Исследование данных об инвестиции венчурных фондов в компании-стартапы
 Данные
-В проекте работа идёт с базой данных, которая хранит информацию о венчурных фондах и инвестициях в компании-стартапы. Эта база данных основана на датасете Startup Investments, опубликованном на популярной платформе для соревнований по исследованию данных Kaggle.
+В проекте работа идёт с базой данных, которая хранит информацию о венчурных фондах и инвестициях в компании-стартапы. 
+Эта база данных основана на датасете Startup Investments, опубликованном на популярной платформе для соревнований по исследованию данных Kaggle.
 
 Задача
 Проанализировать данные о фондах и инвестициях, произвести выгрузки данных и ответить на поставленные вопросы с помощью SQL.
@@ -16,7 +17,8 @@ WHERE status = 'closed';
 
 Задание 2
 
-Отобразите количество привлечённых средств для новостных компаний США. Используйте данные из таблицы company. Отсортируйте таблицу по убыванию значений в поле funding_total .
+Отобразите количество привлечённых средств для новостных компаний США. Используйте данные из таблицы company.
+Отсортируйте таблицу по убыванию значений в поле funding_total .
 
 SELECT funding_total
 FROM company
@@ -25,7 +27,8 @@ AND country_code = 'USA'
 ORDER BY funding_total DESC;
 
 Задание 3
-Найдите общую сумму сделок по покупке одних компаний другими в долларах. Отберите сделки, которые осуществлялись только за наличные с 2011 по 2013 год включительно.
+Найдите общую сумму сделок по покупке одних компаний другими в долларах. Отберите сделки, которые осуществлялись только за наличные
+с 2011 по 2013 год включительно.
 
 SELECT SUM(price_amount)
 FROM acquisition
@@ -45,10 +48,240 @@ WHERE twitter_username LIKE 'Silver%'
 
 Задание 5
 
-Для каждой страны отобразите общую сумму привлечённых инвестиций, которые получили компании, зарегистрированные в этой стране. Страну, в которой зарегистрирована компания, можно определить по коду страны. Отсортируйте данные по убыванию суммы.
+Для каждой страны отобразите общую сумму привлечённых инвестиций, которые получили компании, зарегистрированные в этой стране. 
+Страну, в которой зарегистрирована компания, можно определить по коду страны. Отсортируйте данные по убыванию суммы.
 
 SELECT country_code AS country,
        SUM(funding_total)
 FROM company
 GROUP BY country_code
 ORDER BY SUM(funding_total) DESC;
+
+Задание 6
+
+Для каждой страны отобразите общую сумму привлечённых инвестиций, которые получили компании, зарегистрированные в этой стране. 
+Страну, в которой зарегистрирована компания, можно определить по коду страны. Отсортируйте данные по убыванию суммы.
+
+SELECT country_code AS country,
+       SUM(funding_total)
+FROM company
+GROUP BY country_code
+ORDER BY SUM(funding_total) DESC;
+
+Задание 7
+
+Составьте таблицу, в которую войдёт дата проведения раунда, а также минимальное и максимальное значения суммы инвестиций, привлечённых в эту дату.
+
+SELECT funded_at,
+       MIN(raised_amount),
+       MAX(raised_amount)
+FROM funding_round
+GROUP BY funded_at
+HAVING MIN(raised_amount) NOT IN (0,MAX(raised_amount));
+
+Задание 8
+
+SELECT id,
+       name,
+       founded_at,
+       domain,
+       twitter_username,
+       country_code,
+       investment_rounds,
+       invested_companies,
+       milestones,
+       created_at, 
+       updated_at,
+       CASE
+           WHEN invested_companies >= 100 THEN 'high_activity'
+           WHEN invested_companies >= 20 AND invested_companies < 100 THEN 'middle_activity'
+           WHEN invested_companies < 20 THEN 'low_activity'
+        END
+
+FROM fund;
+
+Задание 9
+
+Для каждой из категорий, назначенных в предыдущем задании, посчитайте округлённое до ближайшего целого числа среднее количество инвестиционных раундов,
+в которых фонд принимал участие. Выведите на экран категории и среднее число инвестиционных раундов. Отсортируйте таблицу по возрастанию среднего.
+
+SELECT 
+       CASE
+           WHEN invested_companies>=100 THEN 'high_activity'
+           WHEN invested_companies>=20 THEN 'middle_activity'
+           ELSE 'low_activity'
+       END AS activity,
+       ROUND(AVG(investment_rounds))
+FROM fund
+GROUP BY activity 
+ORDER BY ROUND(AVG(investment_rounds));
+
+Задание 10
+
+Проанализируйте, в каких странах находятся фонды, которые чаще всего инвестируют в стартапы. 
+Для каждой страны посчитайте минимальное, максимальное и среднее число компаний, в которые инвестировали фонды этой страны, основанные с 2010 по 2012 
+год включительно. Исключите страны с фондами, у которых минимальное число компаний, получивших инвестиции, равно нулю. Выгрузите десять самых активных стран-инвесторов.
+Отсортируйте таблицу по среднему количеству компаний от большего к меньшему, а затем по коду страны в лексикографическом порядке.
+
+SELECT country_code,
+       MIN(invested_companies),
+       AVG(invested_companies),
+       MAX(invested_companies)
+FROM fund
+WHERE founded_at BETWEEN '2010-01-01' AND '2012-12-31'
+
+GROUP BY country_code
+HAVING MIN(invested_companies) != 0
+ORDER BY AVG(invested_companies) DESC,country_code
+
+LIMIT 10;
+
+Задание 11
+
+
+Отобразите имя и фамилию всех сотрудников стартапов. Добавьте поле с названием учебного заведения, которое окончил сотрудник, если эта информация известна.
+
+SELECT p.first_name,
+       p.last_name,
+       e.instituition
+FROM people AS p
+LEFT JOIN education AS e ON p.id = e.person_id 
+
+Задание 12
+
+Для каждой компании найдите количество учебных заведений, которые окончили её сотрудники. Выведите название компании и число уникальных названий учебных заведений. 
+Составьте топ-5 компаний по количеству университетов.
+
+SELECT c.name,
+       COUNT(DISTINCT e.instituition)
+FROM company AS c
+LEFT OUTER JOIN people AS p ON c.id=p.company_id
+INNER JOIN education AS e ON e.person_id=p.id
+GROUP BY c.name
+ORDER BY COUNT(DISTINCT e.instituition) DESC
+LIMIT 5;
+
+Задание 13
+
+Составьте список с уникальными названиями закрытых компаний, для которых первый раунд финансирования оказался последним.
+
+SELECT DISTINCT c.name
+FROM funding_round AS fr
+LEFT JOIN company AS c ON c.id= fr.company_id
+WHERE fr.is_first_round = 1 AND fr.is_last_round = 1
+AND c.status = 'closed'
+
+Задание 14
+
+Составьте список уникальных номеров сотрудников, которые работают в компаниях, отобранных в предыдущем задании.
+
+SELECT DISTINCT p.id
+FROM company AS c
+INNER JOIN people AS p ON c.id = p.company_id
+ INNER JOIN (SELECT DISTINCT c.name
+FROM funding_round AS fr
+LEFT JOIN company AS c ON c.id= fr.company_id
+WHERE fr.is_first_round = 1 AND fr.is_last_round = 1
+AND c.status = 'closed') AS unq_name ON unq_name.name = c.name
+
+Задание 15
+
+Составьте таблицу, куда войдут уникальные пары с номерами сотрудников из предыдущей задачи и учебным заведением, которое окончил сотрудник.
+
+SELECT  DISTINCT unq_staff.id,
+        e.instituition
+FROM (SELECT DISTINCT p.id
+      FROM company AS c
+      INNER JOIN people AS p ON c.id = p.company_id
+      INNER JOIN 
+               (SELECT DISTINCT c.name
+                FROM funding_round AS fr
+                LEFT JOIN company AS c ON c.id= fr.company_id
+                WHERE fr.is_first_round = 1 AND fr.is_last_round = 1
+AND c.status = 'closed') AS unq_name ON unq_name.name = c.name) AS unq_staff
+INNER JOIN education AS e ON unq_staff.id= e.person_id;
+
+Задание 16
+
+
+Посчитайте количество учебных заведений для каждого сотрудника из предыдущего задания.
+При подсчёте учитывайте, что некоторые сотрудники могли окончить одно и то же заведение дважды.
+
+SELECT  DISTINCT unq_staff.id,
+        COUNT(e.instituition)
+FROM (SELECT DISTINCT p.id
+      FROM company AS c
+      INNER JOIN people AS p ON c.id = p.company_id
+      INNER JOIN 
+               (SELECT DISTINCT c.name
+                FROM funding_round AS fr
+                LEFT JOIN company AS c ON c.id= fr.company_id
+                WHERE fr.is_first_round = 1 AND fr.is_last_round = 1
+AND c.status = 'closed') AS unq_name ON unq_name.name = c.name) AS unq_staff
+INNER JOIN education AS e ON unq_staff.id= e.person_id
+GROUP BY unq_staff.id;
+
+Задание 17
+
+Дополните предыдущий запрос и выведите среднее число учебных заведений (всех, не только уникальных), которые окончили сотрудники разных компаний. 
+Нужно вывести только одну запись, группировка здесь не понадобится.
+
+SELECT AVG(inst_staff.count1)
+FROM
+(SELECT  DISTINCT unq_staff.id,
+        COUNT(e.instituition) AS count1
+FROM (SELECT DISTINCT p.id
+      FROM company AS c
+      INNER JOIN people AS p ON c.id = p.company_id
+      INNER JOIN 
+               (SELECT DISTINCT c.name
+                FROM funding_round AS fr
+                LEFT JOIN company AS c ON c.id= fr.company_id
+                WHERE fr.is_first_round = 1 AND fr.is_last_round = 1
+AND c.status = 'closed') AS unq_name ON unq_name.name = c.name) AS unq_staff
+INNER JOIN education AS e ON unq_staff.id= e.person_id
+GROUP BY unq_staff.id) AS inst_staff
+
+Задание 18
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
